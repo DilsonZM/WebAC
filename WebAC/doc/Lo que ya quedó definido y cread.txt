@@ -1,0 +1,392 @@
+1) Lo que ya quedó definido y creado (modelo mínimo blindado)
+Lista 1 — EquiposAC (maestra de activos + jerarquía)
+
+Propósito: fuente única para jerarquía y para cargar combos “en cascada”.
+
+Campos mínimos (en este orden lógico):
+
+Title (lo usas como EquipNo) — Texto
+
+NombreEquipo — Texto
+
+BranchGerencia — Texto
+
+SiteSuperintendencia — Texto
+
+UnidadProceso — Texto
+
+Fleet — Texto ✅ (dijiste que así se llama)
+
+ProcesoSistema — Texto
+
+EGI — Texto
+
+Estado — Choice (DI/… opcional)
+
+📌 Clave: el usuario nunca debe “inventar” jerarquía: todo sale de aquí.
+
+Lista 2 — EscenariosAC (evento/observación base predefinida)
+
+Propósito: contiene el texto fijo que el usuario SOLO LEE (no lo escribe), y que habilita responder las 10 preguntas.
+
+Campos mínimos:
+
+Title — Texto (nombre corto del escenario)
+
+Activo — Sí/No (default Sí)
+
+NivelAplicacion — Choice:
+
+Corporativo, Fleet, ProcesoSistema, EGI, Equipo
+
+BranchGerencia — Texto (opcional)
+
+Fleet — Texto (opcional)
+
+ProcesoSistema — Texto (opcional)
+
+EGI — Texto (opcional)
+
+EquipNo — Texto (opcional)
+
+EventoAnalizado — Varias líneas (Plain text) ✅ obligatorio
+
+📌 Regla: para cada escenario defines “a qué nivel aplica”.
+Ejemplo: si aplica a EGI=WINCHEP1, entonces NivelAplicacion=EGI y EGI=WINCHEP1.
+
+Lista 3 — EvaluacionesAC (hechos / histórico)
+
+Propósito: 1 evaluación = 1 fila, con snapshot del evento y las 10 respuestas.
+
+Campos mínimos:
+
+Title — Texto (ej: EVAL-YYYYMMDD-EquipNo)
+
+EquipNo — Texto ✅
+
+EGI — Texto
+
+ProcesoSistema — Texto
+
+Fleet — Texto
+
+EscenarioId — Número ✅
+
+EventoAnalizadoSnapshot — Varias líneas (Plain text) ✅
+
+FO — Número
+
+FIN — Número
+
+HSE — Número
+
+MA — Número
+
+SOC — Número
+
+DDHH — Número
+
+REP — Número
+
+LEGAL — Número
+
+TI — Número
+
+FF — Número
+
+NC — Número (si aplica)
+
+Justificacion — Varias líneas (Plain text) ✅
+
+Evaluador — Persona/Grupo ✅
+
+FechaEvaluacion — Fecha/hora ✅
+
+📌 Importante: esto es solo consulta para usuarios normales. Edición solo admin.
+
+2) Lo que se debe construir (aplicación sin NPM, profesional y rápida)
+2.1 Arquitectura de pantallas (simple y profesional)
+
+Sin frameworks, pero con UI “BI style”.
+
+A) Dashboard / Inicio (estadístico)
+
+Tarjetas KPI:
+
+Evaluaciones (hoy / 7 días / mes)
+
+Equipos evaluados (distintos)
+
+Top EGI con más evaluaciones
+
+Pendientes (si lo implementas)
+
+Gráficos simples (sin librerías):
+
+barra “evaluaciones por Fleet”
+
+tabla “últimas 20 evaluaciones”
+
+Botón principal: “Nueva evaluación”
+
+✅ Todo sale de EvaluacionesAC con filtros por fecha.
+
+B) Wizard “Nueva evaluación” (con confirmación final)
+
+Paso 1 — Selección del nivel a evaluar
+
+Dropdown: Fleet | ProcesoSistema | EGI | Equipo
+
+Paso 2 — Cascada (solo lo necesario)
+Aquí es donde lo haces pro y evitas cargar 5000 combos de golpe:
+
+Si eligió Fleet:
+
+Select Fleet (se carga con distinct desde EquiposAC.Fleet)
+
+Cobertura: #Procesos, #EGI, #Equipos (calculado desde EquiposAC filtrado)
+
+Si eligió ProcesoSistema:
+
+Primero Fleet (opcional o requerido según tu regla)
+
+Luego ProcesoSistema filtrado por Fleet (si Fleet elegido)
+
+Si eligió EGI:
+
+Fleet (opcional)
+
+ProcesoSistema (opcional)
+
+EGI filtrado por lo anterior
+
+Si eligió Equipo:
+
+Búsqueda tipo “search box” (no combo gigante)
+
+Resultados paginados (20–50)
+
+Selecciona 1 equipo
+
+Paso 3 — Evento Analizado (solo lectura)
+
+La app busca escenario con prioridad:
+
+Equipo (EquipNo)
+
+EGI
+
+ProcesoSistema
+
+Fleet
+
+Corporativo
+
+Si NO encuentra: muestra alerta roja:
+
+“No existe escenario activo para esta selección. Contacta al administrador.”
+
+y bloquea el paso 4.
+
+Paso 4 — 10 preguntas
+
+10 selects (1–4 o tu escala)
+
+Campo Justificación obligatorio
+
+Paso 5 — Resumen / Confirmación
+
+Muestra:
+
+jerarquía final (Fleet, Proceso, EGI, Equipo)
+
+escenario usado (Id + título)
+
+evento analizado (texto)
+
+tabla con las 10 respuestas
+
+Botón: Confirmar y enviar
+
+Tras guardar: pantalla “Éxito” + link “Ver evaluación”
+
+✅ Esto reduce errores y evita “enviar y arrepentirse”.
+
+C) Pantalla “Mis evaluaciones” (consulta)
+
+Lista paginada (últimas 50) con filtros:
+
+fecha, Fleet, ProcesoSistema, EGI, EquipNo
+
+Al abrir una: vista detalle solo lectura
+
+Exportar a Excel (opcional, simple: CSV)
+
+2.2 Admin: CRUD + Reabrir evaluación
+
+Sin NPM también.
+
+Admin Panel (rutas protegidas)
+
+Módulos:
+
+Equipos
+
+En MVP NO haces CRUD aquí en la app: eso lo administra SharePoint o carga masiva.
+
+La app solo consulta.
+
+Escenarios
+
+Listado con filtros (NivelAplicacion, Fleet, Proceso, EGI, EquipNo, Activo)
+
+Botones:
+
+Crear
+
+Editar
+
+Activar/Desactivar
+
+Importante: no cargar todo, siempre por filtros o búsqueda.
+
+Evaluaciones
+
+Listado + filtros
+
+Ver detalle
+
+Botón “Reabrir”:
+
+Implementación recomendada:
+
+columna nueva en EvaluacionesAC: EstadoEvaluacion (Choice: CERRADA, REABIERTA)
+
+columna ReabiertaPor (Persona)
+
+columna ReabiertaFecha (Fecha)
+
+Cuando admin “reabre”:
+
+la evaluación vuelve editable solo para admin o para el evaluador (según regla)
+
+o simplemente crea “Nueva versión” (mejor para auditoría)
+
+✅ Para auditoría, lo más sólido es versionado:
+
+No editas la fila original.
+
+Creas una nueva fila “RevisionDeId = X”.
+Pero si quieres simple: usa EstadoEvaluacion.
+
+3) Cómo evitar mostrar 5000 registros “de golpe” (sin NPM)
+
+Esto es CLAVE y te quita el 80% de los bugs/performance.
+
+3.1 Cascada basada en “distinct” desde EquiposAC
+
+Cargas EquiposAC una sola vez pero solo con columnas necesarias:
+
+Id, Title, Fleet, ProcesoSistema, EGI, NombreEquipo
+
+Y de ahí construyes sets:
+
+distinct Fleet
+
+distinct ProcesoSistema filtrado
+
+distinct EGI filtrado
+
+👉 Si EquiposAC es demasiado grande, haces paginación con @odata.nextLink.
+
+3.2 Equipo NO en combo: es buscador
+
+Input “Buscar equipo”
+
+Query por prefijo/contiene:
+
+filtro en REST con substringof (clásico) o contains (depende config)
+
+Muestras resultados paginados 20.
+
+4) Qué endpoints REST debe usar tu JS (sin SPFx, sin libs)
+4.1 Leer Equipos (mínimo)
+
+EquiposAC:
+
+select mínimo:
+
+Id,Title,NombreEquipo,Fleet,ProcesoSistema,EGI
+
+paginado:
+
+$top=5000 + @odata.nextLink
+
+4.2 Resolver escenario (lo más importante)
+
+Primero intenta por el nivel más específico y vas bajando:
+
+Equipo:
+
+NivelAplicacion eq 'Equipo' and EquipNo eq 'X' and Activo eq 1
+
+EGI:
+
+NivelAplicacion eq 'EGI' and EGI eq 'Y' and Activo eq 1
+
+ProcesoSistema:
+
+NivelAplicacion eq 'ProcesoSistema' and ProcesoSistema eq 'Z' and Activo eq 1
+
+Fleet:
+
+NivelAplicacion eq 'Fleet' and Fleet eq 'F' and Activo eq 1
+
+Corporativo:
+
+NivelAplicacion eq 'Corporativo' and Activo eq 1
+
+✅ Si hay más de uno, toma el más reciente (Modified desc) o el primero.
+
+4.3 Guardar evaluación (POST)
+
+Inserta en EvaluacionesAC
+
+Copia snapshot del evento.
+
+5) Entregables exactos que te faltan construir
+
+Definir roles/permisos
+
+Usuarios normales: leer EvaluacionesAC (solo suyas o todas según política), crear evaluaciones
+
+Admin: CRUD EscenariosAC + reabrir evaluaciones
+
+Crear las vistas de SharePoint
+
+EscenariosAC: vistas por NivelAplicacion
+
+EvaluacionesAC: vista “Por mes”, “Por Fleet”, “Reabiertas”
+
+(Ayuda cuando la app falle, tienes respaldo)
+
+Implementar app JS “limpia”
+
+spHttp.js (GET paginado, POST, manejo de errores)
+
+catalogService.js (carga EquiposAC → sets)
+
+escenarioService.js (resolver escenario con fallback)
+
+evaluacionesService.js (guardar + listar)
+
+ui/ (wizard + dashboard + admin)
+
+6) Nota sobre tu incidente “Unexpected token 'return'”
+
+Eso pasa cuando alguien metió un return suelto en un archivo cargado como módulo, o rompió la sintaxis (pegar código dentro de string / minificar mal).
+Regla para blindarte:
+
+Todo JS como ES modules (import/export) o todo como script clásico, pero no mezclado.
+
+Si usas import ... entonces el <script> debe ser type="module".
