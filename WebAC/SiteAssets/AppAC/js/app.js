@@ -26,7 +26,19 @@ const app = (() => {
       REP: "REPUTACIÓN E IMAGEN",
       LEGAL: "LEGAL",
       TI: "TI",
-      FF: "FRECUENCIA DE FALLA"
+      FF: "FACTOR DE FRECUENCIA DE FALLA"
+    },
+    preguntaTooltips: {
+      FO: "Flexibilidad Operacional: Capacidad para cubrir metas con activos dispuestos.",
+      FIN: "Financiero: Impacto en finanzas y lucro cesante.",
+      HSE: "Salud y Seguridad: Afectación a salud/higiene de personas.",
+      MA: "Medio Ambiente: Afectación al entorno natural.",
+      SOC: "Social/Cultural: Afectación a comunidades y patrimonio.",
+      DDHH: "Derechos Humanos: Impacto en derechos humanos por operación.",
+      REP: "Reputación: Afectación de imagen corporativa.",
+      LEGAL: "Legal: Temas legales derivados de operación.",
+      TI: "TI: Afectación a sistemas e información.",
+      FF: "Factor de Frecuencia de Falla: Eventos de falla por año."
     },
     escala: [1, 2, 3, 4, 5],
     versionMetodologia: "1.0",
@@ -57,6 +69,9 @@ const app = (() => {
     distinct: { fleet: [], proceso: [], egi: [], gerencia: [], superintendencia: [], unidadProceso: [] },
     wizard: {
       nivel: "",
+      gerencia: "",
+      superintendencia: "",
+      unidadProceso: "",
       fleet: "",
       proceso: "",
       egi: "",
@@ -72,7 +87,8 @@ const app = (() => {
       justificacion: "",
       existingEvalId: null,
       coverage: null,
-      eventoAnalizado: ""
+      eventoAnalizado: "",
+      forcedContinuity: false
     },
     search: { term: "", page: 0, pageSize: 5, results: [] },
     adminEditingId: null,
@@ -285,6 +301,9 @@ const app = (() => {
     state.equipos = data.equipos;
     state.equiposMap = data.equiposMap;
     state.distinct = data.distinct;
+    fillSelect(el("sel-gerencia"), state.distinct.gerencia, "Todas las gerencias");
+    fillSelect(el("sel-superintendencia"), state.distinct.superintendencia, "Todas las superintendencias");
+    fillSelect(el("sel-unidad-proceso"), state.distinct.unidadProceso, "Todas las unidades");
     fillSelect(el("sel-fleet"), state.distinct.fleet, "Seleccione...");
     fillSelect(el("sel-proceso"), state.distinct.proceso, "Seleccione...");
     fillSelect(el("sel-egi"), state.distinct.egi, "Seleccione...");
@@ -453,8 +472,15 @@ const app = (() => {
   }
 
   function resetWizard() {
-    state.wizard = { nivel: "", fleet: "", proceso: "", egi: "", equipo: null, escenarioCandidates: [], equiposCubiertos: 0, escenario: null, escenarioSearch: "", escenarioThrottled: false, escenarioPage: 0, escenarioPageSize: 5, respuestas: {}, justificacion: "", existingEvalId: null, coverage: null, eventoAnalizado: "" };
+    state.wizard = { nivel: "", gerencia: "", superintendencia: "", unidadProceso: "", fleet: "", proceso: "", egi: "", equipo: null, escenarioCandidates: [], equiposCubiertos: 0, escenario: null, escenarioSearch: "", escenarioThrottled: false, escenarioPage: 0, escenarioPageSize: 5, respuestas: {}, justificacion: "", existingEvalId: null, coverage: null, eventoAnalizado: "" };
     el("nivel-select").value = "";
+    el("sel-gerencia").value = "";
+    el("sel-superintendencia").value = "";
+    el("sel-unidad-proceso").value = "";
+    // Limpiar también filtros del Step 2
+    if (el("step2-gerencia")) el("step2-gerencia").value = "";
+    if (el("step2-superintendencia")) el("step2-superintendencia").value = "";
+    if (el("step2-unidad-proceso")) el("step2-unidad-proceso").value = "";
     el("sel-fleet").value = "";
     el("sel-proceso").value = "";
     el("sel-egi").value = "";
@@ -477,12 +503,22 @@ const app = (() => {
   }
 
   function resetFilters() {
+    state.wizard.gerencia = "";
+    state.wizard.superintendencia = "";
+    state.wizard.unidadProceso = "";
     state.wizard.fleet = "";
     state.wizard.proceso = "";
     state.wizard.egi = "";
     state.wizard.equipo = null;
     state.wizard.coverage = null;
     state.wizard.existingEvalId = null;
+    el("sel-gerencia").value = "";
+    el("sel-superintendencia").value = "";
+    el("sel-unidad-proceso").value = "";
+    // Limpiar también filtros del Step 2 si existen
+    if (el("step2-gerencia")) el("step2-gerencia").value = "";
+    if (el("step2-superintendencia")) el("step2-superintendencia").value = "";
+    if (el("step2-unidad-proceso")) el("step2-unidad-proceso").value = "";
     el("sel-fleet").value = "";
     el("sel-proceso").value = "";
     el("sel-egi").value = "";
@@ -500,18 +536,140 @@ const app = (() => {
   function buildPreguntas() {
     const container = el("preguntas");
     if (!container) return;
+    
+    // Inyectar estilos CSS para layout horizontal
+    const style = document.createElement('style');
+    style.textContent = `
+      #preguntas {
+        display: grid;
+        grid-template-columns: repeat(10, 1fr);
+        gap: 0.75rem;
+        margin: 1rem 0;
+      }
+      #preguntas .question-wrapper {
+        display: flex;
+        flex-direction: column;
+        text-align: center;
+        min-height: 120px;
+      }
+      #preguntas .question-label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        cursor: help;
+        color: #374151;
+      }
+      #preguntas .question-desc {
+        font-size: 0.65rem;
+        color: #6b7280;
+        margin-top: 0.5rem;
+        line-height: 1.1;
+        min-height: 32px;
+        white-space: normal;
+        text-align: center;
+        max-width: 100%;
+      }
+      #preguntas .form-select {
+        width: 100%;
+        min-width: 60px;
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+      }
+      .summary-answers-grid {
+        display: grid;
+        grid-template-columns: repeat(10, 1fr);
+        gap: 0.75rem;
+        margin: 1rem 0;
+      }
+      .summary-answers-grid .answer-cell {
+        text-align: center;
+        padding: 0.5rem;
+        background: #f8fafc;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        cursor: help;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      .summary-answers-grid .answer-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 0.25rem;
+      }
+      .summary-answers-grid .answer-value {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #1e293b;
+      }
+      /* Clases de colores pastel para celdas completas (severity-1 a severity-5) */
+      .summary-answers-grid .severity-1 {
+        background-color: #d1fae5 !important;
+        border: 1px solid rgba(6, 95, 70, 0.3) !important;
+      }
+      .summary-answers-grid .severity-1 .answer-label,
+      .summary-answers-grid .severity-1 .answer-value {
+        color: #065f46 !important;
+      }
+      .summary-answers-grid .severity-2 {
+        background-color: #fef9c3 !important;
+        border: 1px solid rgba(133, 77, 14, 0.3) !important;
+      }
+      .summary-answers-grid .severity-2 .answer-label,
+      .summary-answers-grid .severity-2 .answer-value {
+        color: #854d0e !important;
+      }
+      .summary-answers-grid .severity-3 {
+        background-color: #ffedd5 !important;
+        border: 1px solid rgba(154, 52, 18, 0.3) !important;
+      }
+      .summary-answers-grid .severity-3 .answer-label,
+      .summary-answers-grid .severity-3 .answer-value {
+        color: #9a3412 !important;
+      }
+      .summary-answers-grid .severity-4 {
+        background-color: #fee2e2 !important;
+        border: 1px solid rgba(153, 27, 27, 0.3) !important;
+      }
+      .summary-answers-grid .severity-4 .answer-label,
+      .summary-answers-grid .severity-4 .answer-value {
+        color: #991b1b !important;
+      }
+      .summary-answers-grid .severity-5 {
+        background-color: #fce7f3 !important;
+        border: 1px solid rgba(131, 24, 67, 0.3) !important;
+      }
+      .summary-answers-grid .severity-5 .answer-label,
+      .summary-answers-grid .severity-5 .answer-value {
+        color: #831843 !important;
+      }
+    `;
+    document.head.appendChild(style);
+    
     container.innerHTML = "";
     CONFIG.preguntas.forEach(key => {
       const wrapper = document.createElement("div");
+      wrapper.className = "question-wrapper";
+      
       const label = document.createElement("label");
       label.className = "question-label";
-      label.innerHTML = `<span class="q-code">${key}</span><span class="q-text">${CONFIG.preguntaLabels[key] || ""}</span>`;
+      label.textContent = key;
+      label.title = CONFIG.preguntaTooltips[key] || "";
+      
       const select = document.createElement("select");
       select.className = "form-select";
       select.dataset.key = key;
       select.innerHTML = `<option value="">Seleccione</option>` + CONFIG.escala.map(v => `<option value="${v}">${v}</option>`).join("");
+      
+      const desc = document.createElement("div");
+      desc.className = "question-desc";
+      desc.textContent = CONFIG.preguntaLabels[key] || "";
+      
       wrapper.appendChild(label);
       wrapper.appendChild(select);
+      wrapper.appendChild(desc);
       container.appendChild(wrapper);
     });
   }
@@ -726,9 +884,31 @@ const app = (() => {
 
   function applyTargetFilter(items) {
     const h = resolveHierarchy();
+    const gerencia = state.wizard.gerencia;
+    const superintendencia = state.wizard.superintendencia;
+    const unidadProceso = state.wizard.unidadProceso;
     const fleet = state.wizard.fleet || h.Fleet;
     const proceso = state.wizard.proceso || h.ProcesoSistema;
     const egi = state.wizard.egi || h.EGI;
+    return items.filter(i => {
+      if (state.wizard.nivel === "Equipo") return (i.EquipNo || i.Title) === h.EquipNo;
+      if (gerencia && i.BranchGerencia !== gerencia) return false;
+      if (superintendencia && i.SiteSuperintendencia !== superintendencia) return false;
+      if (unidadProceso && i.UnidadProceso !== unidadProceso) return false;
+      if (fleet && i.Fleet !== fleet) return false;
+      if (proceso && i.ProcesoSistema !== proceso) return false;
+      if (egi && i.EGI !== egi) return false;
+      return true;
+    });
+  }
+
+  function applyScenarioTargetFilter(items) {
+    const h = resolveHierarchy();
+    const fleet = state.wizard.fleet || h.Fleet;
+    const proceso = state.wizard.proceso || h.ProcesoSistema;
+    const egi = state.wizard.egi || h.EGI;
+    
+    // FILTRO LIMPIO: Solo campos que existen en EscenariosAC
     return items.filter(i => {
       if (state.wizard.nivel === "Equipo") return (i.EquipNo || i.Title) === h.EquipNo;
       if (fleet && i.Fleet !== fleet) return false;
@@ -739,28 +919,126 @@ const app = (() => {
   }
 
   function updateCascadeOptions() {
+    const gerencia = el("sel-gerencia").value;
+    const superintendencia = el("sel-superintendencia").value;
+    const unidadProceso = el("sel-unidad-proceso").value;
     const fleet = el("sel-fleet").value;
     const proceso = el("sel-proceso").value;
     const egi = el("sel-egi").value;
+    
+    // Filtrar jerárquicamente: Gerencia -> Superintendencia -> UnidadProceso -> Fleet -> Proceso -> EGI
     let filtered = state.equipos;
+    if (gerencia) filtered = filtered.filter(i => i.BranchGerencia === gerencia);
+    if (superintendencia) filtered = filtered.filter(i => i.SiteSuperintendencia === superintendencia);
+    if (unidadProceso) filtered = filtered.filter(i => i.UnidadProceso === unidadProceso);
     if (fleet) filtered = filtered.filter(i => i.Fleet === fleet);
     if (proceso) filtered = filtered.filter(i => i.ProcesoSistema === proceso);
     if (egi) filtered = filtered.filter(i => i.EGI === egi);
+    
+    // Generar opciones distinct para cada nivel
+    const distinctSuperintendencia = [...new Set(filtered.map(i => i.SiteSuperintendencia).filter(Boolean))].sort();
+    const distinctUnidadProceso = [...new Set(filtered.map(i => i.UnidadProceso).filter(Boolean))].sort();
+    const distinctFleet = [...new Set(filtered.map(i => i.Fleet).filter(Boolean))].sort();
     const distinctProceso = [...new Set(filtered.map(i => i.ProcesoSistema).filter(Boolean))].sort();
     const distinctEgi = [...new Set(filtered.map(i => i.EGI).filter(Boolean))].sort();
+    
+    // Actualizar selects manteniendo valores válidos
+    fillSelect(el("sel-superintendencia"), distinctSuperintendencia, "Todas las superintendencias");
+    fillSelect(el("sel-unidad-proceso"), distinctUnidadProceso, "Todas las unidades");
+    fillSelect(el("sel-fleet"), distinctFleet, "Seleccione...");
     fillSelect(el("sel-proceso"), distinctProceso, "Seleccione...");
     fillSelect(el("sel-egi"), distinctEgi, "Seleccione...");
-    el("sel-fleet").value = fleet;
+    
+    // También actualizar selectores del Step 2 si existen
+    if (el("step2-superintendencia")) fillSelect(el("step2-superintendencia"), distinctSuperintendencia, "Todas las superintendencias");
+    if (el("step2-unidad-proceso")) fillSelect(el("step2-unidad-proceso"), distinctUnidadProceso, "Todas las unidades");
+    
+    // Restaurar valores si siguen siendo válidos
+    el("sel-gerencia").value = gerencia;
+    if (distinctSuperintendencia.includes(superintendencia)) el("sel-superintendencia").value = superintendencia;
+    if (distinctUnidadProceso.includes(unidadProceso)) el("sel-unidad-proceso").value = unidadProceso;
+    if (distinctFleet.includes(fleet)) el("sel-fleet").value = fleet;
     if (distinctProceso.includes(proceso)) el("sel-proceso").value = proceso;
     if (distinctEgi.includes(egi)) el("sel-egi").value = egi;
+    
+    // También restaurar valores en Step 2
+    if (el("step2-superintendencia") && distinctSuperintendencia.includes(superintendencia)) el("step2-superintendencia").value = superintendencia;
+    if (el("step2-unidad-proceso") && distinctUnidadProceso.includes(unidadProceso)) el("step2-unidad-proceso").value = unidadProceso;
   }
 
   function setWizardState() {
     state.wizard.nivel = el("nivel-select").value;
+    state.wizard.gerencia = el("sel-gerencia").value;
+    state.wizard.superintendencia = el("sel-superintendencia").value;
+    state.wizard.unidadProceso = el("sel-unidad-proceso").value;
     state.wizard.fleet = el("sel-fleet").value;
     state.wizard.proceso = el("sel-proceso").value;
     state.wizard.egi = el("sel-egi").value;
     updateTargetSummary();
+  }
+
+  function syncHierarchyFiltersToStep2() {
+    // Copiar valores del Step 1 al Step 2
+    const step2Gerencia = el("step2-gerencia");
+    const step2Super = el("step2-superintendencia");
+    const step2Unidad = el("step2-unidad-proceso");
+    
+    if (step2Gerencia) {
+      fillSelect(step2Gerencia, state.distinct.gerencia, "Todas las gerencias");
+      step2Gerencia.value = state.wizard.gerencia;
+    }
+    
+    // Aplicar filtros jerárquicos para superintendencias
+    let filteredEquipos = state.equipos;
+    if (state.wizard.gerencia) {
+      filteredEquipos = filteredEquipos.filter(i => i.BranchGerencia === state.wizard.gerencia);
+    }
+    const distinctSuperintendencia = [...new Set(filteredEquipos.map(i => i.SiteSuperintendencia).filter(Boolean))].sort();
+    
+    if (step2Super) {
+      fillSelect(step2Super, distinctSuperintendencia, "Todas las superintendencias");
+      step2Super.value = state.wizard.superintendencia;
+    }
+    
+    // Aplicar filtros para unidades
+    if (state.wizard.superintendencia) {
+      filteredEquipos = filteredEquipos.filter(i => i.SiteSuperintendencia === state.wizard.superintendencia);
+    }
+    const distinctUnidadProceso = [...new Set(filteredEquipos.map(i => i.UnidadProceso).filter(Boolean))].sort();
+    
+    if (step2Unidad) {
+      fillSelect(step2Unidad, distinctUnidadProceso, "Todas las unidades");
+      step2Unidad.value = state.wizard.unidadProceso;
+    }
+  }
+
+  function updateHierarchyFiltersFromStep2() {
+    // Sincronizar cambios del Step 2 al state principal
+    const step2Gerencia = el("step2-gerencia")?.value || "";
+    const step2Super = el("step2-superintendencia")?.value || "";
+    const step2Unidad = el("step2-unidad-proceso")?.value || "";
+    
+    // Actualizar el state
+    state.wizard.gerencia = step2Gerencia;
+    state.wizard.superintendencia = step2Super;
+    state.wizard.unidadProceso = step2Unidad;
+    
+    // Sincronizar con los selectores del Step 1
+    if (el("sel-gerencia")) el("sel-gerencia").value = step2Gerencia;
+    if (el("sel-superintendencia")) el("sel-superintendencia").value = step2Super;
+    if (el("sel-unidad-proceso")) el("sel-unidad-proceso").value = step2Unidad;
+    
+    // CRÍTICO: Aplicar filtrado en cascada para actualizar opciones disponibles
+    updateCascadeOptions();
+    updateTargetSummary();
+    
+    // FORZAR ACTUALIZACIÓN DE TABLA: Usar la función corregida que incluye filtros jerárquicos
+    const txtEquipo = el("txt-equipo");
+    if (txtEquipo) {
+      searchEquipoLocal(txtEquipo.value);
+    } else {
+      searchEquipoLocal("");
+    }
   }
 
   function updateTargetSummary() {
@@ -771,11 +1049,24 @@ const app = (() => {
       box.textContent = "";
       return;
     }
-    if (!target.valor) {
-      box.textContent = `Estás evaluando por: ${target.tipo}`;
-      return;
+    
+    // Construir texto base
+    let baseText = `Estás evaluando: ${target.tipo}`;
+    if (target.valor) {
+      baseText += ` - ${target.valor}`;
     }
-    box.textContent = `Estás evaluando por: ${target.tipo} - ${target.valor}`;
+    
+    // Agregar información jerárquica si hay filtros activos
+    const jerarquia = [];
+    if (state.wizard.gerencia) jerarquia.push(`${state.wizard.gerencia}`);
+    if (state.wizard.superintendencia) jerarquia.push(`${state.wizard.superintendencia}`);
+    if (state.wizard.unidadProceso) jerarquia.push(`${state.wizard.unidadProceso}`);
+    
+    if (jerarquia.length > 0) {
+      baseText += ` | ${jerarquia.join(" > ")}`;
+    }
+    
+    box.textContent = baseText;
   }
 
   function buildEvalEquiposItems(equipos) {
@@ -1463,13 +1754,11 @@ const app = (() => {
 
   function searchEquipoLocal(term) {
     const t = (term || "").toLowerCase();
-    const fleet = el("sel-fleet").value;
-    const proceso = el("sel-proceso").value;
-    const egi = el("sel-egi").value;
-    let base = state.equipos;
-    if (fleet) base = base.filter(i => i.Fleet === fleet);
-    if (proceso) base = base.filter(i => i.ProcesoSistema === proceso);
-    if (egi) base = base.filter(i => i.EGI === egi);
+    
+    // CORRECCIÓN CRÍTICA: Usar applyTargetFilter para incluir filtros jerárquicos
+    let base = applyTargetFilter(state.equipos);
+    
+    // Aplicar filtro de búsqueda solo si estamos en modo "Equipo" y hay texto
     if (!t || state.wizard.nivel !== "Equipo") {
       state.search.results = base;
     } else {
@@ -1889,8 +2178,7 @@ const app = (() => {
         <td>${meta.gerencia}</td>
         <td>${meta.superintendencia}</td>
         <td>${meta.unidadProceso}</td>
-        <td>${tipo}</td>
-        <td>${valor}</td>
+        <td>${tipo} - ${valor}</td>
         <td>${cubiertos}</td>
         <td>${criticidad}</td>
         <td>${lider}</td>
@@ -1908,8 +2196,7 @@ const app = (() => {
               <th>Gerencia</th>
               <th>Superintendencia</th>
               <th>UnidadProceso</th>
-              <th>Tipo</th>
-              <th>Target</th>
+              <th>TIPO DE ANÁLISIS</th>
               <th>Equipos</th>
               <th>Criticidad</th>
               <th>Líder operativo</th>
@@ -2444,8 +2731,7 @@ const app = (() => {
         <td>${meta.gerencia}</td>
         <td>${meta.superintendencia}</td>
         <td>${meta.unidadProceso}</td>
-        <td>${tipo}</td>
-        <td>${valor}</td>
+        <td>${tipo} - ${valor}</td>
         <td>${cubiertos}</td>
         <td>${clasif}</td>
         <td>${lider}</td>
@@ -2463,8 +2749,7 @@ const app = (() => {
               <th>Gerencia</th>
               <th>Superintendencia</th>
               <th>UnidadProceso</th>
-              <th>Tipo</th>
-              <th>Target</th>
+              <th>TIPO DE ANÁLISIS</th>
               <th>Equipos</th>
               <th>Criticidad</th>
               <th>LíderOperativo</th>
@@ -2509,8 +2794,7 @@ const app = (() => {
         <td>${meta.gerencia}</td>
         <td>${meta.superintendencia}</td>
         <td>${meta.unidadProceso}</td>
-        <td>${tipo}</td>
-        <td>${valor}</td>
+        <td>${tipo} - ${valor}</td>
         <td>${cubiertos}</td>
         <td>${criticidad}</td>
         <td>${fecha}</td>
@@ -2526,8 +2810,7 @@ const app = (() => {
               <th>Gerencia</th>
               <th>Superintendencia</th>
               <th>UnidadProceso</th>
-              <th>Tipo</th>
-              <th>Target</th>
+              <th>TIPO DE ANÁLISIS</th>
               <th>Equipos</th>
               <th>Criticidad</th>
               <th>Fecha</th>
@@ -2657,8 +2940,7 @@ const app = (() => {
         <td>${meta.gerencia}</td>
         <td>${meta.superintendencia}</td>
         <td>${meta.unidadProceso}</td>
-        <td>${tipo}</td>
-        <td>${valor}</td>
+        <td>${tipo} - ${valor}</td>
         <td>${cubiertos}</td>
         <td>${clasif}</td>
         <td>${lider}</td>
@@ -2677,8 +2959,7 @@ const app = (() => {
               <th>Gerencia</th>
               <th>Superintendencia</th>
               <th>UnidadProceso</th>
-              <th>Tipo</th>
-              <th>Target</th>
+              <th>TIPO DE ANÁLISIS</th>
               <th>Equipos</th>
               <th>Criticidad</th>
               <th>LíderOperativo</th>
@@ -2807,9 +3088,13 @@ const app = (() => {
     const { tipo, valor } = getTarget();
     if (!valor) return 0;
     if (tipo === "Equipo") return 1;
-    if (tipo === "Fleet") return state.equipos.filter(i => i.Fleet === valor).length;
-    if (tipo === "ProcesoSistema") return state.equipos.filter(i => i.ProcesoSistema === valor).length;
-    if (tipo === "EGI") return state.equipos.filter(i => i.EGI === valor).length;
+    
+    // Aplicar TODOS los filtros (jerárquicos + nivel) antes de contar
+    const filtered = applyTargetFilter(state.equipos);
+    
+    if (tipo === "Fleet") return filtered.filter(i => i.Fleet === valor).length;
+    if (tipo === "ProcesoSistema") return filtered.filter(i => i.ProcesoSistema === valor).length;
+    if (tipo === "EGI") return filtered.filter(i => i.EGI === valor).length;
     return 0;
   }
 
@@ -2885,8 +3170,12 @@ const app = (() => {
     if (!tipo || !valor) return [];
     const term = String(searchTerm || "").trim();
     if (CONFIG.requireScenarioSearch && term.length < 3) return [];
+    
+    // SOLO enviar tipo y valor al servicio - NO el wizard completo
     const items = await scenarioService.listCandidates(tipo, valor, CONFIG.maxEscenarios, term);
-    const filtered = applyTargetFilter(items);
+    
+    // Aplicar filtros jerárquicos sobre los resultados obtenidos
+    const filtered = applyScenarioTargetFilter(items);
     const deduped = new Map();
     filtered.forEach(item => {
       const key = `${item.Title || ""}|${item.EventoAnalizado || ""}`;
@@ -2902,7 +3191,9 @@ const app = (() => {
       const item = await scenarioService.getById(r.ListItemID);
       if (item && item.Activo !== false) details.push(item);
     }
-    const filtered = applyTargetFilter(details);
+    
+    // Aplicar filtro específico para escenarios (NO usar applyTargetFilter)
+    const filtered = applyScenarioTargetFilter(details);
     const deduped = new Map();
     filtered.forEach(item => {
       const key = `${item.Title || ""}|${item.EventoAnalizado || ""}`;
@@ -3044,11 +3335,17 @@ const app = (() => {
     };
     const smax = Math.max(vals.FIN, vals.HSE, vals.MA, vals.SOC, vals.DDHH, vals.REP, vals.LEGAL, vals.TI);
     const impacto = smax * vals.FO;
-    const getSeveridad = (fo, smaxLocal) => {
-      const base = 5 - Math.floor((fo * smaxLocal) / 5);
-      return Math.min(5, Math.max(1, base || 1));
+    const getSeveridad = (impactoValue) => {
+      // NUEVA LÓGICA: Determinar nivel basado en rangos de Impacto
+      if (impactoValue >= 20 && impactoValue <= 25) return 5;
+      if (impactoValue >= 15 && impactoValue <= 19) return 4;
+      if (impactoValue >= 10 && impactoValue <= 14) return 3;
+      if (impactoValue >= 5 && impactoValue <= 9) return 2;
+      if (impactoValue >= 1 && impactoValue <= 4) return 1;
+      // Fallback para valores fuera de rango
+      return impactoValue > 25 ? 5 : 1;
     };
-    const getCriticidadMatrix = (fo, smaxLocal, ff) => {
+    const getCriticidadMatrix = (impactoValue, ff) => {
       const matrix = {
         1: [5, 10, 20, 35, 55],
         2: [15, 25, 40, 60, 80],
@@ -3056,14 +3353,20 @@ const app = (() => {
         4: [50, 70, 90, 105, 115],
         5: [75, 95, 110, 120, 125]
       };
-      const severity = getSeveridad(fo, smaxLocal);
+      const severity = getSeveridad(impactoValue);
       const ffIndex = Math.min(5, Math.max(1, ff)) - 1;
       const row = matrix[severity] || matrix[1];
       return row[ffIndex] ?? 0;
     };
-    const severity = getSeveridad(vals.FO, smax);
-    const nc = getCriticidadMatrix(vals.FO, smax, vals.FF);
-    const clasificacion = nc <= 30 ? "BAJA" : (nc <= 74 ? "MEDIA" : "ALTA");
+    const severity = getSeveridad(impacto);
+    const nc = getCriticidadMatrix(impacto, vals.FF);
+    let clasificacion = nc <= 30 ? "BAJA" : (nc <= 74 ? "MEDIA" : "ALTA");
+    
+    // Aplicar forzado por continuidad operativa si está activo
+    if (state.wizard && state.wizard.forcedContinuity) {
+      clasificacion = "ALTA";
+    }
+    
     return { smax, impacto, nc, clasificacion, severity, vals };
   }
 
@@ -3098,11 +3401,31 @@ const app = (() => {
           <div class="summary-label">Evento</div>
           <div class="summary-value">${state.wizard.eventoAnalizado || escenario.EventoAnalizado || "-"}</div>
         </div>
-        <div class="summary-metrics">
+        <div class="summary-block">
+          <div class="summary-label">Respuestas</div>
+          <div class="summary-answers-grid">
+            ${CONFIG.preguntas.map(k => {
+              const valor = respuestas[k] || "-";
+              const colorClass = valor !== "-" ? `severity-${valor}` : "";
+              return `
+              <div class="answer-cell ${colorClass}" title="${CONFIG.preguntaTooltips[k] || ''}">
+                <div class="answer-label">${k}</div>
+                <div class="answer-value">${valor}</div>
+              </div>
+            `;
+            }).join("")}
+          </div>
+        </div>
+        <div class="summary-metrics" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem;">
           <div class="metric-card">
-            <div class="metric-title">Nivel de severidad</div>
-            <div class="metric-value">${resultado.severity}</div>
-            <div class="metric-desc">Nivel de severidad usado en la matriz (1–5), calculado con FO y Smax.</div>
+            <div class="metric-title">Smax</div>
+            <div class="metric-value">${resultado.smax}</div>
+            <div class="metric-desc">Valor máximo de consecuencias (FIN, HSE, MA, etc.)</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">FO</div>
+            <div class="metric-value">${resultado.vals.FO}</div>
+            <div class="metric-desc">Frecuencia Operacional</div>
           </div>
           <div class="metric-card">
             <div class="metric-title">Impacto</div>
@@ -3119,13 +3442,9 @@ const app = (() => {
           </div>
           <div class="metric-card">
             <div class="metric-title">Criticidad</div>
-            <div class="metric-value">${resultado.clasificacion}</div>
-            <div class="metric-desc">≤30 BAJA · ≤74 MEDIA · &gt;74 ALTA.</div>
+            <div class="metric-value" style="${state.wizard.forcedContinuity ? 'color: #ef4444; font-weight: bold;' : ''}">${state.wizard.forcedContinuity ? 'ALTA' : resultado.clasificacion}</div>
+            <div class="metric-desc">≤30 BAJA · ≤74 MEDIA · &gt;74 ALTA.${state.wizard.forcedContinuity ? '<br><small style="color: #ef4444; font-style: italic;">(Forzado por Continuidad Operativa)</small>' : ''}</div>
           </div>
-        </div>
-        <div class="summary-block">
-          <div class="summary-label">Respuestas</div>
-          <div class="summary-answers">${CONFIG.preguntas.map(k => `<span class="answer-pill">${k}: ${respuestas[k] || "-"}</span>`).join("")}</div>
         </div>
         <div class="summary-block">
           <div class="summary-label">Justificación</div>
@@ -3334,6 +3653,17 @@ const app = (() => {
         setStep(2);
         const nivel = state.wizard.nivel;
         setWizardState();
+        
+        // FORZAR SINCRONIZACIÓN: Asignar explícitamente los valores del Step 1 al Step 2
+        syncHierarchyFiltersToStep2();
+        
+        // FORZAR ACTUALIZACIÓN DE CASCADAS: Disparar eventos change para activar dependencias
+        const step2Gerencia = el("step2-gerencia");
+        if (step2Gerencia) {
+          step2Gerencia.value = state.wizard.gerencia;
+          step2Gerencia.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        
         const equipoSearch = el("equipo-search");
         if (equipoSearch) equipoSearch.classList.remove("hidden");
         const txtEquipo = el("txt-equipo");
@@ -3349,13 +3679,62 @@ const app = (() => {
         applyNivelFilters();
         updateCascadeOptions();
         enableStep3();
+        
+        // FORZAR ACTUALIZACIÓN DE TABLA: Ejecutar búsqueda con filtros aplicados
         if (txtEquipo) searchEquipoLocal(txtEquipo.value);
       });
 
       on("reset-filters", "click", () => {
         resetFilters();
         updateCascadeOptions();
+        enableStep3();
         searchEquipoLocal("");
+      });
+
+      on("reset-hierarchy-filters", "click", () => {
+        // Limpiar filtros jerárquicos en ambos steps
+        el("sel-gerencia").value = "";
+        el("sel-superintendencia").value = "";
+        el("sel-unidad-proceso").value = "";
+        if (el("step2-gerencia")) el("step2-gerencia").value = "";
+        if (el("step2-superintendencia")) el("step2-superintendencia").value = "";
+        if (el("step2-unidad-proceso")) el("step2-unidad-proceso").value = "";
+        
+        // Actualizar state y refrescar
+        state.wizard.gerencia = "";
+        state.wizard.superintendencia = "";
+        state.wizard.unidadProceso = "";
+        updateCascadeOptions();
+        updateTargetSummary();
+        
+        // FORZAR ACTUALIZACION DE TABLA: Renderizar con filtros limpios
+        searchEquipoLocal("");
+      });
+      
+      // Event listeners para filtros jerárquicos del Step 2
+      ["step2-gerencia", "step2-superintendencia", "step2-unidad-proceso"].forEach(id => {
+        const node = el(id);
+        if (!node) return;
+        node.addEventListener("change", () => {
+          // Actualizar state inmediatamente
+          updateHierarchyFiltersFromStep2();
+          
+          // Recalcular habilitación del step 3
+          enableStep3();
+          
+          // Actualizar contador de equipos target 
+          const targetCount = calcCoberturaCount();
+          const targetCountEl = el("equipo-count-target");
+          if (targetCountEl) targetCountEl.textContent = targetCount;
+          
+          // RENDERIZADO INMEDIATO: Forzar actualización de tabla
+          const txtEquipo = el("txt-equipo");
+          if (txtEquipo) {
+            searchEquipoLocal(txtEquipo.value);
+          } else {
+            searchEquipoLocal("");
+          }
+        });
       });
 
       on("ver-evaluacion-existente", "click", async () => {
@@ -3470,9 +3849,13 @@ const app = (() => {
       });
     }
 
-      on("back-step-1", "click", () => setStep(1));
+      on("back-step-1", "click", () => {
+        // Sincronizar valores del Step 2 al Step 1 antes de volver
+        updateHierarchyFiltersFromStep2();
+        setStep(1);
+      });
 
-      ["sel-fleet", "sel-proceso", "sel-egi"].forEach(id => {
+      ["sel-gerencia", "sel-superintendencia", "sel-unidad-proceso", "sel-fleet", "sel-proceso", "sel-egi"].forEach(id => {
         const node = el(id);
         if (!node) return;
         node.addEventListener("change", () => {
@@ -3657,7 +4040,15 @@ const app = (() => {
       });
       on("back-step-3", "click", () => setStep(3));
 
-      on("to-step-5", "click", () => {
+      on("to-step-5", "click", async () => {
+      // A. RESETEO INICIAL: Limpiar decisiones anteriores
+      state.wizard.forcedContinuity = false;
+      // Limpiar texto de forzado previo en justificación
+      const justificacionInput = el("justificacion");
+      if (justificacionInput && justificacionInput.value.includes('[Forzado por Continuidad Operativa]')) {
+        justificacionInput.value = justificacionInput.value.replace(/ ?\[Forzado por Continuidad Operativa\]/g, '').trim();
+      }
+      
       const respuestas = {};
       let ok = true;
       document.querySelectorAll("#preguntas select").forEach(select => {
@@ -3669,8 +4060,63 @@ const app = (() => {
         swalInfo("Faltan datos", "Complete todas las respuestas y la justificación.");
         return;
       }
+      
+      // Guardar datos antes del cálculo
       state.wizard.respuestas = respuestas;
       state.wizard.justificacion = justificacion;
+      
+      // Calcular criticidad preliminar
+      const resultado = calcularResultado(respuestas);
+      
+      // Verificar si necesitamos preguntar por continuidad operativa
+// 3. INTERCEPTAR si NO es ALTA
+      if (resultado.clasificacion !== "ALTA") {
+        
+        // A. Definir el nombre correcto y el género (Esta/Este)
+        let sujeto = "este activo"; // Valor por defecto
+        switch (state.wizard.nivel) {
+            case "Fleet":           sujeto = "esta Flota / Sección"; break;
+            case "ProcesoSistema":  sujeto = "este Proceso / Sistema"; break;
+            case "EGI":             sujeto = "este EGI"; break;
+            case "Equipo":          sujeto = "este Equipo"; break;
+        }
+
+        // B. Mostrar la alerta con el texto dinámico corregido
+        const result = await Swal.fire({
+          title: '¿Continuidad Operativa?',
+          // AQUI ESTA EL CAMBIO CLAVE:
+          text: `La criticidad calculada es ${resultado.clasificacion}. ¿${sujeto} afecta la continuidad operativa?`,
+          icon: 'question',
+          showCancelButton: true,
+          showCloseButton: true,
+          confirmButtonText: 'SÍ, Afecta',
+          cancelButtonText: 'NO, No afecta',
+          confirmButtonColor: '#ef4444',
+          cancelButtonColor: '#6b7280'
+        });
+        
+        // B. MANEJO DE DIFERENTES TIPOS DE CIERRE DEL MODAL
+        if (result.isDismissed) {
+          // Distinguir entre "NO" vs "X/fuera del modal"
+          if (result.dismiss === Swal.DismissReason.cancel) {
+            // Usuario hizo clic en "NO, No afecta" - AVANZAR con cálculo original
+            state.wizard.forcedContinuity = false;
+          } else {
+            // Usuario cerró con X o hizo clic fuera - DETENERSE en Step 4
+            return;
+          }
+        } else if (result.isConfirmed) {
+           // Usuario hizo clic en "SÍ, Afecta" - FORZAR A ALTA
+          state.wizard.forcedContinuity = true;
+          if (!state.wizard.justificacion.includes('Continuidad Operativa')) {
+            state.wizard.justificacion += ' [Forzado por Continuidad Operativa]';
+          }
+        }
+      } else {
+        // Es ALTA, no necesitamos preguntar
+        state.wizard.forcedContinuity = false;
+      }
+      
       buildResumen();
       setStep(5);
       });

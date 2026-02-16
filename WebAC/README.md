@@ -326,3 +326,31 @@ Los filtros se renderizan como selects, usando valores únicos de columnas clave
 
 ---
 Esta sección resume cómo se consumen las listas, el mapeo de columnas lógicas y cómo expandir la app para que cualquier persona pueda entender y mantener el desarrollo.
+
+---
+
+## 🔄 Actualización: Filtros Jerárquicos y Rediseño UI (Febrero 10 2026)
+
+Se ha implementado una nueva capa de filtrado organizacional para facilitar la búsqueda de activos en bases de datos extensas.
+
+### 1. Nuevas Funcionalidades
+- **Filtros Jerárquicos Superiores:** Se agregaron 3 nuevos selectores en el Wizard:
+  - `Gerencia` (Filtra Superintendencias).
+  - `Superintendencia` (Filtra Unidades).
+  - `Unidad de Proceso` (Filtra el universo de equipos).
+- **Persistencia Visual:** Los filtros seleccionados en el **Paso 1** ahora viajan y se mantienen visibles/editables en el **Paso 2**.
+- **Reactividad en Tiempo Real:** Al modificar una Gerencia o Superintendencia en el Paso 2, la tabla de "Equipos a Evaluar" y los contadores de cobertura se actualizan instantáneamente sin recargar.
+
+### 2. Cambios en Lógica de Negocio (Core)
+- **Lógica de Intersección Estricta:**
+  El cálculo de equipos disponibles ahora obedece a la fórmula:
+  `Equipos = (Filtros Jerárquicos [Gerencia+Super+Unidad]) AND (Filtros de Nivel [Fleet+Proceso+EGI])`
+  *Antes:* Los filtros de nivel ignoraban la selección de Gerencia en el conteo final.
+  *Ahora:* Se garantiza consistencia total entre lo que se filtra y lo que se cuenta.
+
+- **Saneamiento de Consultas (Fix "Parameter Pollution"):**
+  Se corrigió un bug donde la búsqueda de Escenarios fallaba al recibir campos de jerarquía (`BranchGerencia`) que no existen en la lista `EscenariosAC`. Ahora el sistema "limpia" el objeto de consulta antes de llamar a la API de SharePoint, enviando solo los niveles tácticos (`Fleet`, `EGI`, `Proceso`).
+
+### 3. Mejoras de Interfaz (UI/UX)
+- **Rediseño del Paso 1:** Reorganización del layout para alinear el botón "Continuar" con el selector de Nivel, y agrupación de los filtros jerárquicos en una fila independiente de 3 columnas.
+- **Integración Visual en Paso 2:** Los filtros persistentes se integraron nativamente en el formulario de selección de target, eliminando contenedores redundantes y mejorando la limpieza visual.

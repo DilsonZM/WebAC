@@ -479,3 +479,621 @@ textarea { min-height: 120px; resize: vertical; }
 #eval-back { margin-right: 0.4rem; }
 #view-evaluacion .card + .card { margin-top: 1.4rem; }
 #view-evaluacion .card > .toolbar { margin-bottom: 0.8rem; }
+
+/* === DISEÑO HERO CARD MODERNO ISO 22301 === */
+.iso-hero-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.iso-hero-card.estado-critico {
+  background: #fef2f2;
+  border-color: #fecaca;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+}
+
+.iso-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.iso-card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  color: #1f2937;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.iso-badge {
+  background: #0f172a;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.iso-inputs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.input-wrapper .floating-label {
+  position: absolute;
+  top: 0;
+  left: 12px;
+  background: #f8fafc;
+  color: #6b7280;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0 4px;
+  transform: translateY(-50%);
+  transition: all 0.2s ease;
+  z-index: 1;
+}
+
+.input-wrapper input {
+  width: 100%;
+  height: 50px;
+  padding: 0 16px;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: white;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.input-wrapper input:focus {
+  border-color: #3b82f6;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.input-wrapper input:focus + .floating-label {
+  color: #3b82f6;
+  background: white;
+}
+
+.input-wrapper input:valid {
+  border-color: #10b981;
+}
+
+.input-wrapper input:valid + .floating-label {
+  color: #10b981;
+}
+
+.input-icon {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.2rem;
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.iso-status-area {
+  position: relative;
+  min-height: 60px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iso-status {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  text-align: center;
+  display: none;
+  transition: all 0.3s ease;
+  border: 2px solid;
+}
+
+.iso-status.critico {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  color: #991b1b;
+  border-color: #f87171;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pulseWarning 2s infinite;
+}
+
+.iso-status.normal {
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+  color: #166534;
+  border-color: #34d399;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes pulseWarning {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+/* Layout horizontal para preguntas matriciales */
+#preguntas {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+#preguntas .question-wrapper {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  min-height: 120px;
+}
+
+#preguntas .question-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  cursor: help;
+  color: #374151;
+}
+
+#preguntas .question-desc {
+  font-size: 0.65rem;
+  color: #6b7280;
+  margin-top: 0.5rem;
+  line-height: 1.1;
+  min-height: 32px;
+  white-space: normal;
+  text-align: center;
+  max-width: 100%;
+}
+
+#preguntas-matriz {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+#preguntas .form-select {
+  width: 100%;
+  min-width: 60px;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.summary-answers-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.summary-answers-grid .answer-cell {
+  text-align: center;
+  padding: 0.5rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  cursor: help;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.summary-answers-grid .answer-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 0.25rem;
+}
+
+.summary-answers-grid .answer-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+/* Clases de colores pastel para celdas completas */
+.summary-answers-grid .severity-1 {
+  background-color: #d1fae5 !important;
+  border: 1px solid rgba(6, 95, 70, 0.3) !important;
+}
+
+.summary-answers-grid .severity-1 .answer-label,
+.summary-answers-grid .severity-1 .answer-value {
+  color: #065f46 !important;
+}
+
+.summary-answers-grid .severity-2 {
+  background-color: #fef9c3 !important;
+  border: 1px solid rgba(133, 77, 14, 0.3) !important;
+}
+
+.summary-answers-grid .severity-2 .answer-label,
+.summary-answers-grid .severity-2 .answer-value {
+  color: #854d0e !important;
+}
+
+.summary-answers-grid .severity-3 {
+  background-color: #ffedd5 !important;
+  border: 1px solid rgba(154, 52, 18, 0.3) !important;
+}
+
+.summary-answers-grid .severity-3 .answer-label,
+.summary-answers-grid .severity-3 .answer-value {
+  color: #9a3412 !important;
+}
+
+.summary-answers-grid .severity-4 {
+  background-color: #fee2e2 !important;
+  border: 1px solid rgba(153, 27, 27, 0.3) !important;
+}
+
+.summary-answers-grid .severity-4 .answer-label,
+.summary-answers-grid .severity-4 .answer-value {
+  color: #991b1b !important;
+}
+
+.summary-answers-grid .severity-5 {
+  background-color: #fce7f3 !important;
+  border: 1px solid rgba(131, 24, 67, 0.3) !important;
+}
+
+.summary-answers-grid .severity-5 .answer-label,
+.summary-answers-grid .severity-5 .answer-value {
+  color: #831843 !important;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .iso-inputs-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .iso-card-header {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+  
+  .iso-hero-card {
+    padding: 1rem;
+  }
+}
+
+/* === DISEÑO HERO CARD MODERNO ISO 22301 === */
+.iso-hero-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.iso-hero-card.estado-critico {
+  background: #fef2f2;
+  border-color: #fecaca;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+}
+
+.iso-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.iso-card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  color: #1f2937;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.iso-badge {
+  background: #0f172a;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.iso-inputs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.input-wrapper .floating-label {
+  position: absolute;
+  top: 0;
+  left: 12px;
+  background: #f8fafc;
+  color: #6b7280;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0 4px;
+  transform: translateY(-50%);
+  transition: all 0.2s ease;
+  z-index: 1;
+}
+
+.input-wrapper input {
+  width: 100%;
+  height: 50px;
+  padding: 0 16px;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: white;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.input-wrapper input:focus {
+  border-color: #3b82f6;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.input-wrapper input:focus + .floating-label {
+  color: #3b82f6;
+  background: white;
+}
+
+.input-wrapper input:valid {
+  border-color: #10b981;
+}
+
+.input-wrapper input:valid + .floating-label {
+  color: #10b981;
+}
+
+.input-icon {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.2rem;
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.iso-status-area {
+  position: relative;
+  min-height: 60px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iso-status {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  text-align: center;
+  display: none;
+  transition: all 0.3s ease;
+  border: 2px solid;
+}
+
+.iso-status.critico {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  color: #991b1b;
+  border-color: #f87171;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pulseWarning 2s infinite;
+}
+
+.iso-status.normal {
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+  color: #166534;
+  border-color: #34d399;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes pulseWarning {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+/* Layout horizontal para preguntas matriciales */
+#preguntas {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+#preguntas .question-wrapper {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  min-height: 120px;
+}
+
+#preguntas .question-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  cursor: help;
+  color: #374151;
+}
+
+#preguntas .question-desc {
+  font-size: 0.65rem;
+  color: #6b7280;
+  margin-top: 0.5rem;
+  line-height: 1.1;
+  min-height: 32px;
+  white-space: normal;
+  text-align: center;
+  max-width: 100%;
+}
+
+#preguntas-matriz {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+#preguntas .form-select {
+  width: 100%;
+  min-width: 60px;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.summary-answers-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.summary-answers-grid .answer-cell {
+  text-align: center;
+  padding: 0.5rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  cursor: help;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.summary-answers-grid .answer-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 0.25rem;
+}
+
+.summary-answers-grid .answer-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+/* Clases de colores pastel para celdas completas */
+.summary-answers-grid .severity-1 {
+  background-color: #d1fae5 !important;
+  border: 1px solid rgba(6, 95, 70, 0.3) !important;
+}
+
+.summary-answers-grid .severity-1 .answer-label,
+.summary-answers-grid .severity-1 .answer-value {
+  color: #065f46 !important;
+}
+
+.summary-answers-grid .severity-2 {
+  background-color: #fef9c3 !important;
+  border: 1px solid rgba(133, 77, 14, 0.3) !important;
+}
+
+.summary-answers-grid .severity-2 .answer-label,
+.summary-answers-grid .severity-2 .answer-value {
+  color: #854d0e !important;
+}
+
+.summary-answers-grid .severity-3 {
+  background-color: #ffedd5 !important;
+  border: 1px solid rgba(154, 52, 18, 0.3) !important;
+}
+
+.summary-answers-grid .severity-3 .answer-label,
+.summary-answers-grid .severity-3 .answer-value {
+  color: #9a3412 !important;
+}
+
+.summary-answers-grid .severity-4 {
+  background-color: #fee2e2 !important;
+  border: 1px solid rgba(153, 27, 27, 0.3) !important;
+}
+
+.summary-answers-grid .severity-4 .answer-label,
+.summary-answers-grid .severity-4 .answer-value {
+  color: #991b1b !important;
+}
+
+.summary-answers-grid .severity-5 {
+  background-color: #fce7f3 !important;
+  border: 1px solid rgba(131, 24, 67, 0.3) !important;
+}
+
+.summary-answers-grid .severity-5 .answer-label,
+.summary-answers-grid .severity-5 .answer-value {
+  color: #831843 !important;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .iso-inputs-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .iso-card-header {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+  
+  .iso-hero-card {
+    padding: 1rem;
+  }
+}
