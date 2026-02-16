@@ -61,22 +61,27 @@ Notas:
 ---
 
 ## 5) Cálculos y reglas de negocio
-### 5.1 Smax
-Smax = máximo de FIN, HSE, MA, SOC, DDHH, REP, LEGAL, TI.
 
-### 5.2 Impacto
-Impacto = Smax × FO.
 
-### 5.3 Nivel de severidad (para matriz)
-Severidad = $\lfloor 5 - (FO \times Smax)/5 \rfloor$, acotada a 1–5.
+### 5.1 Impacto (Matriz)
+- **Smax:** Valor máximo seleccionado entre las consecuencias (FIN, HSE, MA, SOC, DDHH, REP, LEGAL, TI).
+- **Impacto:** $S_{max} \times FO$. (Rango posible: 1 a 25).
 
-### 5.4 NC (matriz)
-NC se obtiene desde la matriz 5×5 según Severidad (filas) y FF (columnas).
+### 5.2 Nivel de Severidad
+La severidad (eje Y de la matriz) se obtiene ubicando el valor del **Impacto** en los siguientes rangos estrictos definidos por el negocio:
+- **20 - 25:** Severidad 5
+- **15 - 19:** Severidad 4
+- **10 - 14:** Severidad 3
+- **5 - 9:** Severidad 2
+- **1 - 4:** Severidad 1
 
-### 5.5 Clasificación
-- BAJA: NC ≤ 30
-- MEDIA: NC ≤ 74
-- ALTA: NC > 74
+### 5.3 Nivel de Criticidad (NC)
+El NC se obtiene desde la matriz de riesgo 5×5 rígida, cruzando la **Severidad** (Filas) con el **Factor de Frecuencia (FF)** (Columnas).
+
+### 5.4 Clasificación
+- **BAJA:** NC ≤ 30
+- **MEDIA:** NC 31 – 74
+- **ALTA:** NC > 74
 
 ---
 
