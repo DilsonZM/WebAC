@@ -42,7 +42,7 @@ Evaluar criticidad de activos por distintos niveles (Fleet / ProcesoSistema / EG
 - [SiteAssets/AppAC/js/catalogService.js](SiteAssets/AppAC/js/catalogService.js): carga de EquiposAC con paginación + Search fallback.
 - [SiteAssets/AppAC/js/scenarioService.js](SiteAssets/AppAC/js/scenarioService.js): carga de escenarios con Search fallback.
 - [SiteAssets/AppAC/css/style.css](SiteAssets/AppAC/css/style.css): estilos generales.
-
+- [HISTORIAL.md](HISTORIAL.md): cambios del proyecto.
 
 ---
 
@@ -359,4 +359,3 @@ Se ha implementado una nueva capa de filtrado organizacional para facilitar la b
 ### 3. Mejoras de Interfaz (UI/UX)
 - **Rediseño del Paso 1:** Reorganización del layout para alinear el botón "Continuar" con el selector de Nivel, y agrupación de los filtros jerárquicos en una fila independiente de 3 columnas.
 - **Integración Visual en Paso 2:** Los filtros persistentes se integraron nativamente en el formulario de selección de target, eliminando contenedores redundantes y mejorando la limpieza visual.
-
